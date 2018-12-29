@@ -45,6 +45,8 @@ var (
 	vflag         = flag.Bool("v", false, "print verbose information on standard error")
 	dflag         = flag.Bool("d", false, "alias for -mode=diff")
 	mode          = flag.String("mode", "", "formatting mode: check, diff, or fix (default fix)")
+	diffProgram   = flag.String("diff", "", "diff program to run when the formatting mode is diff (default uses the BUILDIFIER_DIFF, BUILDIFIER_MULTIDIFF, and DISPLAY environment variables to select the diff program)")
+	multiDiff     = flag.Bool("multi_diff", false, "the diff program specified by the -diff flag can diff multiple files in the style of tkdiff (default false)")
 	lint          = flag.String("lint", "", "lint mode: off, warn, or fix (default off)")
 	warnings      = flag.String("warnings", "all", "comma-separated warnings used in the lint mode or \"all\" (default all)")
 	filePath      = flag.String("path", "", "assume BUILD file has this path relative to the workspace directory")
@@ -66,12 +68,13 @@ func stringList(name, help string) func() []string {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `usage: buildifier [-d] [-v] [-mode=mode] [-lint=lint_mode] [-path=path] [files...]
+	fmt.Fprintf(os.Stderr, `usage: buildifier [-d] [-v] [-diff=diff_program] [-mode=mode] [-lint=lint_mode] [-path=path] [files...]
 
 Buildifier applies a standard formatting to the named BUILD files.
 The mode flag selects the processing: check, diff, fix, or print_if_changed.
 In check mode, buildifier prints a list of files that need reformatting.
-In diff mode, buildifier shows the diffs that it would make.
+In diff mode, buildifier shows the diffs that it would make.  It creates the
+diffs by running a diff program, which can be specified using the -diff flag.
 In fix mode, buildifier updates the files that need reformatting and,
 if the -v flag is given, prints their names to standard error.
 In print_if_changed mode, buildifier shows the file contents it would write.
@@ -200,6 +203,10 @@ func main() {
 	}
 
 	diff = differ.Find()
+	if *diffProgram != "" {
+		diff.Cmd = *diffProgram
+		diff.MultiDiff = *multiDiff
+	}
 
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
 		// Read from stdin, write to stdout.
