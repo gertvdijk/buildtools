@@ -22,6 +22,8 @@ def _buildifier_impl(ctx):
         "@@ARGS@@": shell.array_literal(args),
         "@@BUILDIFIER_SHORT_PATH@@": shell.quote(ctx.executable._buildifier.short_path),
         "@@EXCLUDE_PATTERNS@@": exclude_patterns_str,
+        "@@BUILDIFIER_DIFF@@": shell.quote(ctx.attr.diff_cmd),
+        "@@BUILDIFIER_MULTIDIFF@@": "0" if ctx.attr.disable_multidiff else "",
     }
     ctx.actions.expand_template(
         template = ctx.file._runner,
@@ -57,6 +59,13 @@ _buildifier = rule(
         "exclude_patterns": attr.string_list(
             allow_empty = True,
             doc = "A list of glob patterns passed to the find command. E.g. './vendor/*' to exclude the Go vendor directory",
+        ),
+        "diff_cmd": attr.string(
+            doc = "Command to use to show diff, with mode=diff. E.g. 'diff -u'",
+        ),
+        "disable_multidiff": attr.bool(
+            default = False,
+            doc = "If True, sets BUILDIFIER_MULTIDIFF to 0",
         ),
         "_buildifier": attr.label(
             default = "@com_github_bazelbuild_buildtools//buildifier",
