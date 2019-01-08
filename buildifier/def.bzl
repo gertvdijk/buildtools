@@ -11,6 +11,10 @@ def _buildifier_impl(ctx):
 
     if ctx.attr.lint_mode:
         args.append("-lint=%s" % ctx.attr.lint_mode)
+    if ctx.attr.multidiff:
+        args.append("-multi_diff")
+    if ctx.attr.diff_cmd:
+        args.append("-diff='%s'" % ctx.attr.diff_cmd)
 
     exclude_patterns_str = ""
     if ctx.attr.exclude_patterns:
@@ -57,6 +61,13 @@ _buildifier = rule(
         "exclude_patterns": attr.string_list(
             allow_empty = True,
             doc = "A list of glob patterns passed to the find command. E.g. './vendor/*' to exclude the Go vendor directory",
+        ),
+        "diff_cmd": attr.string(
+            doc = "Command to use to show diff, with mode=diff. E.g. 'diff -u'",
+        ),
+        "multidiff": attr.bool(
+            default = False,
+            doc = "Set to True if the diff program specified by the 'diff_cmd' can diff multiple files in the style of 'tkdiff'",
         ),
         "_buildifier": attr.label(
             default = "@com_github_bazelbuild_buildtools//buildifier",
